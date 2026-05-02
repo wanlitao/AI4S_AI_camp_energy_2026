@@ -43,22 +43,6 @@ def resolve_channel_name(channels: list[str], preferred_name: str) -> str:
     raise ValueError(f"Required channel '{preferred_name}' not found. Available: {channels}")
 
 
-def resolve_ghi_channel(channels: list[str]) -> str:
-    if "ghi" in channels:
-        return "ghi"
-
-    keywords = ("ghi", "irr", "radi", "solar", "srad", "ssrd")
-    for channel in channels:
-        normalized = channel.lower()
-        if any(keyword in normalized for keyword in keywords):
-            return channel
-
-    raise ValueError(
-        "No irradiance channel found. Expected something like 'ghi'. "
-        f"Available: {channels}"
-    )
-
-
 def build_raw_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
     raw_long_df = dataset.to_dataframe().reset_index()
     raw_wide_df = (
@@ -85,11 +69,12 @@ def build_clean_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
     channels = [str(channel) for channel in dataset["channel"].values.tolist()]
     u100_channel = resolve_channel_name(channels, "u100")
     v100_channel = resolve_channel_name(channels, "v100")
-    ghi_channel = resolve_ghi_channel(channels)
+    ghi_channel = resolve_channel_name(channels, "ghi")
+    tp_channel = resolve_channel_name(channels, "tp")
 
     mean_df = (
         dataset["data"]
-        .sel(channel=[u100_channel, v100_channel, ghi_channel])
+        .sel(channel=[u100_channel, v100_channel, ghi_channel, tp_channel])
         .mean(dim=["lat", "lon"], skipna=True)
         .to_dataframe(name="spatial_mean")
         .reset_index()
@@ -115,10 +100,13 @@ def build_clean_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
             u100_channel: "u100_空间平均",
             v100_channel: "v100_空间平均",
             ghi_channel: "ghi_空间平均",
+            tp_channel: "tp_空间平均",
         }
     )
 
-    base_output = clean_df[["times", "u100_空间平均", "v100_空间平均", "ghi_空间平均"]].copy()
+    base_output = clean_df[
+        ["times", "u100_空间平均", "v100_空间平均", "ghi_空间平均", "tp_空间平均"]
+    ].copy()
 
     expanded_frames = []
     for offset_minutes in (0, 15, 30, 45):
