@@ -171,7 +171,6 @@ def add_exogenous_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     df["预测水电负荷比"] = safe_ratio(hydro_forecast, load_forecast)
     df["预测非市场化负荷比"] = safe_ratio(non_market_forecast, load_forecast)
     df["预测风速模长"] = np.sqrt(df["u100_空间平均"] ** 2 + df["v100_空间平均"] ** 2)
-    df["预测辐照降水乘积"] = df["ghi_空间平均"] * df["tp_空间平均"]
     return df
 
 

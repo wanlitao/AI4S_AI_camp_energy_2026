@@ -71,10 +71,11 @@ def build_clean_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
     v100_channel = resolve_channel_name(channels, "v100")
     ghi_channel = resolve_channel_name(channels, "ghi")
     tp_channel = resolve_channel_name(channels, "tp")
+    t2m_channel = resolve_channel_name(channels, "t2m")
 
     mean_df = (
         dataset["data"]
-        .sel(channel=[u100_channel, v100_channel, ghi_channel, tp_channel])
+        .sel(channel=[u100_channel, v100_channel, ghi_channel, tp_channel, t2m_channel])
         .mean(dim=["lat", "lon"], skipna=True)
         .to_dataframe(name="spatial_mean")
         .reset_index()
@@ -94,6 +95,7 @@ def build_clean_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
     base_dates = pd.to_datetime(clean_df["time"]).dt.normalize() + pd.Timedelta(days=1)
     clean_df["lead_time"] = clean_df["lead_time"].astype(int)
     clean_df["times"] = base_dates + pd.to_timedelta(clean_df["lead_time"], unit="h")
+    clean_df[t2m_channel] = clean_df[t2m_channel] - 273.15
 
     clean_df = clean_df.rename(
         columns={
@@ -101,11 +103,12 @@ def build_clean_dataframe(dataset: xr.Dataset) -> pd.DataFrame:
             v100_channel: "v100_空间平均",
             ghi_channel: "ghi_空间平均",
             tp_channel: "tp_空间平均",
+            t2m_channel: "t2m_空间平均",
         }
     )
 
     base_output = clean_df[
-        ["times", "u100_空间平均", "v100_空间平均", "ghi_空间平均", "tp_空间平均"]
+        ["times", "u100_空间平均", "v100_空间平均", "ghi_空间平均", "tp_空间平均", "t2m_空间平均"]
     ].copy()
 
     expanded_frames = []
